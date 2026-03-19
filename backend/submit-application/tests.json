@@ -1,0 +1,1 @@
+{"tests": [{"name": "OPTIONS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200}, {"name": "Submit application", "method": "POST", "path": "/", "body": {"name": "Тест", "email": "test@test.com", "role": "Предприниматель"}, "expectedStatus": 200, "expectedBody": {"success": true}, "bodyMatcher": "partial"}]}
