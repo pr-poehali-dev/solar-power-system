@@ -43,6 +43,11 @@ export default function LandingPage() {
 
   return (
     <Layout>
+      <header className="fixed top-0 left-0 right-0 z-30 px-8 md:px-16 py-6 flex items-center">
+        <span className="text-white font-bold tracking-widest text-sm uppercase">
+          GARANT <span className="text-emerald-400">PORTFOLIO</span>
+        </span>
+      </header>
       <nav className="fixed top-0 right-0 h-screen flex flex-col justify-center z-30 p-4">
         {sections.map((section, index) => (
           <button
