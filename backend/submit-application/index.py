@@ -12,6 +12,12 @@ CORS_HEADERS = {
 }
 
 
+def esc(value):
+    if value is None:
+        return "NULL"
+    return "'" + value.replace("'", "''") + "'"
+
+
 def handler(event: dict, context) -> dict:
     """Обработчик заявок с лендинга. Сохраняет данные формы в таблицу applications."""
 
@@ -28,7 +34,7 @@ def handler(event: dict, context) -> dict:
         return {
             "statusCode": 400,
             "headers": CORS_HEADERS,
-            "body": json.dumps({"success": False, "error": "Invalid JSON"}),
+            "body": json.dumps({"success": False, "error": "Invalid JSON"}, ensure_ascii=False),
         }
 
     name = body.get("name", "").strip()
@@ -41,49 +47,40 @@ def handler(event: dict, context) -> dict:
         return {
             "statusCode": 400,
             "headers": CORS_HEADERS,
-            "body": json.dumps({"success": False, "error": "Поля name, email и role обязательны"}),
+            "body": json.dumps({"success": False, "error": "Поля name, email и role обязательны"}, ensure_ascii=False),
         }
 
     conn = None
     try:
         conn = psycopg2.connect(os.environ["DATABASE_URL"])
         cur = conn.cursor()
+        schema = os.environ.get("MAIN_DB_SCHEMA", "public")
+        now = datetime.utcnow().isoformat()
 
-        cur.execute(
-            """
-            CREATE TABLE IF NOT EXISTS applications (
-                id SERIAL PRIMARY KEY,
-                name TEXT NOT NULL,
-                email TEXT NOT NULL,
-                phone TEXT,
-                role TEXT NOT NULL,
-                comment TEXT,
-                created_at TIMESTAMP NOT NULL DEFAULT NOW()
-            )
-            """,
+        sql = "INSERT INTO {schema}.applications (name, email, phone, role, comment, created_at) VALUES ({name}, {email}, {phone}, {role}, {comment}, {created_at})".format(
+            schema=schema,
+            name=esc(name),
+            email=esc(email),
+            phone=esc(phone or None),
+            role=esc(role),
+            comment=esc(comment or None),
+            created_at=esc(now),
         )
 
-        cur.execute(
-            """
-            INSERT INTO applications (name, email, phone, role, comment, created_at)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            """,
-            (name, email, phone or None, role, comment or None, datetime.utcnow()),
-        )
-
+        cur.execute(sql)
         conn.commit()
         cur.close()
 
         return {
             "statusCode": 200,
             "headers": CORS_HEADERS,
-            "body": json.dumps({"success": True, "message": "Заявка сохранена"}),
+            "body": json.dumps({"success": True, "message": "Заявка сохранена"}, ensure_ascii=False),
         }
     except Exception as e:
         return {
             "statusCode": 500,
             "headers": CORS_HEADERS,
-            "body": json.dumps({"success": False, "error": str(e)}),
+            "body": json.dumps({"success": False, "error": str(e)}, ensure_ascii=False),
         }
     finally:
         if conn:
